@@ -10,6 +10,12 @@ export type GeminiErrorCode =
   | 'RESPONSE_TIMEOUT'
   | 'GENERATION_FAILED'
   | 'TAB_CLOSED'
+  | 'INVALID_REQUEST'
+  | 'EXTENSION_NOT_CONNECTED'
+  | 'BRIDGE_TIMEOUT'
+  | 'WEBSOCKET_DISCONNECTED'
+  | 'INTERNAL_ERROR'
+  | 'UNAUTHORIZED'
   | 'UNKNOWN_ERROR';
 
 export interface GeminiResponse {

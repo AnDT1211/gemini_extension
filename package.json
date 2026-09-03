@@ -5,11 +5,20 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
+    "build:extension": "node build.mjs --extension-only",
+    "build:bridge": "node build.mjs --bridge-only",
+    "dev:bridge": "node dist/bridge/index.js",
+    "start:bridge": "node dist/bridge/index.js",
+    "test": "/home/andt/.nvm/versions/node/v24.11.1/bin/node --test dist/tests/bridge.test.js",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",
     "@types/node": "^20.11.0",
+    "@types/ws": "^8.18.1",
     "esbuild": "^0.20.0",
     "typescript": "^5.3.3"
   }

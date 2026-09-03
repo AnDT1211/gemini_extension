@@ -9,6 +9,17 @@ import { captureResponseBaseline, observeResponseCompletion } from './responseOb
 
 console.log('[GeminiBridge] Content script loaded on Gemini page.');
 
+// Maintain long-lived connection port to background service worker to prevent MV3 worker suspension
+function setupKeepAlivePort(): void {
+  try {
+    const port = chrome.runtime.connect({ name: 'gemini-keepalive' });
+    port.onDisconnect.addListener(() => {
+      setTimeout(setupKeepAlivePort, 1000);
+    });
+  } catch {}
+}
+setupKeepAlivePort();
+
 async function handleExecutePrompt(
   requestId: string,
   prompt: string,

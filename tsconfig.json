@@ -8,8 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "rootDir": "./src",
-    "types": ["chrome", "node"]
+    "types": ["chrome", "node", "ws"]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "bridge-server/**/*", "tests/**/*"]
 }
