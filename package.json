@@ -1,0 +1,16 @@
+{
+  "name": "gemini-chrome-extension",
+  "version": "1.0.0",
+  "description": "Chrome Extension Manifest V3 bridge for Gemini Web UI",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/node": "^20.11.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.3"
+  }
+}
