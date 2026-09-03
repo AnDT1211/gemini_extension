@@ -6,9 +6,14 @@ import { GeminiMessage } from '../shared/messages.js';
 
 chrome.runtime.onMessage.addListener((message: GeminiMessage, sender, sendResponse) => {
   if (message.type === 'ASK_GEMINI_REQUEST') {
+    console.log(`[GeminiBridge] Background worker received ASK_GEMINI_REQUEST: ${message.requestId}`);
     askGemini(message.prompt, message.options)
-      .then((result) => sendResponse(result))
+      .then((result) => {
+        console.log(`[GeminiBridge] Background sending result to popup/caller for ${message.requestId}:`, result);
+        sendResponse(result);
+      })
       .catch((err) => {
+        console.error(`[GeminiBridge] Background error handling ${message.requestId}:`, err);
         sendResponse({
           requestId: message.requestId,
           status: 'error',

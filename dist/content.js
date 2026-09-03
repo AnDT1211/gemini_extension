@@ -102,18 +102,14 @@ var GEMINI_SELECTORS = {
     "button:has(svg)"
     // Scoped to composer container
   ],
-  // 4. Stop / generating candidates (scoped to composer container or response area)
+  // 4. Stop / generating candidates (strict specific selectors)
   generatingIndicators: [
-    'button[aria-label*="Stop" i]',
-    'button[aria-label*="D\u1EEBng" i]',
-    'button[aria-label*="Cancel" i]',
-    '[data-test-id*="stop" i]',
-    '[data-testid*="stop" i]',
-    ".stop-button",
-    "mat-progress-spinner",
-    '[data-is-streaming="true"]',
-    ".streaming",
-    ".is-generating"
+    'button[aria-label*="Stop generating" i]',
+    'button[aria-label*="D\u1EEBng t\u1EA1o" i]',
+    'button[aria-label*="D\u1EEBng c\xE2u tr\u1EA3 l\u1EDDi" i]',
+    '[data-test-id="stop-button"]',
+    '[data-testid="stop-button"]',
+    ".stop-button"
   ],
   // 5. Assistant message element candidates
   assistantMessages: [
@@ -477,8 +473,6 @@ function isGeminiGenerating(responseElement, logger) {
     searchScopes.push(responseElement);
   if (composerContainer)
     searchScopes.push(composerContainer);
-  if (searchScopes.length === 0)
-    searchScopes.push(document);
   for (const scope of searchScopes) {
     const indicator = findMatchingWithDiagnostics(
       GEMINI_SELECTORS.generatingIndicators,
@@ -492,10 +486,24 @@ function isGeminiGenerating(responseElement, logger) {
   }
   return false;
 }
+function isGeminiGenerationComplete(responseElement, logger) {
+  const hasFooterComplete = responseElement.querySelector('.response-footer.complete, .response-footer[class*="complete"]') !== null;
+  const hasMessageActions = responseElement.querySelector('message-actions, .actions-container-v2, [data-test-id="thumb-up-button"], [data-test-id="regenerate-button"]') !== null;
+  if (hasFooterComplete || hasMessageActions) {
+    if (logger)
+      logger.log("Explicit Gemini response completion indicators detected (footer/actions present).");
+    return true;
+  }
+  const busyElements = responseElement.querySelectorAll('[aria-busy="true"]');
+  if (busyElements.length > 0) {
+    return false;
+  }
+  return !isGeminiGenerating(responseElement, logger);
+}
 function observeResponseCompletion(options) {
   const { baseline, logger } = options;
   const timeoutMs = options.timeoutMs ?? 12e4;
-  const stabilizationMs = options.stabilizationMs ?? 600;
+  const defaultStabilizationMs = options.stabilizationMs ?? 500;
   return new Promise((resolve) => {
     let observer = null;
     let pollIntervalTimer = null;
@@ -542,7 +550,6 @@ function observeResponseCompletion(options) {
         return;
       const hasNewResponse = isNewResponsePresent(baseline, logger);
       if (!hasNewResponse) {
-        logger.log("Waiting for new assistant message node...");
         return;
       }
       const currentLatest = getLatestAssistantMessageElement(logger);
@@ -550,30 +557,32 @@ function observeResponseCompletion(options) {
         return;
       }
       const currentContent = extractAssistantContent(currentLatest, logger);
+      if (!currentContent || currentContent.trim().length === 0) {
+        return;
+      }
+      const isComplete = isGeminiGenerationComplete(currentLatest, logger);
       const isGenerating = isGeminiGenerating(currentLatest, logger);
       logger.log(
-        `Checking stream: textLength=${currentContent.length}, generating=${isGenerating}`
+        `Stream check: len=${currentContent.length}, isComplete=${isComplete}, isGenerating=${isGenerating}`
       );
-      if (currentContent.trim().length > 0 && !isGenerating) {
-        if (stabilizationTimer) {
-          clearTimeout(stabilizationTimer);
-        }
-        lastExtractedContent = currentContent;
-        stabilizationTimer = setTimeout(() => {
-          const reVerifiedLatest = getLatestAssistantMessageElement(logger);
-          const reVerifiedContent = reVerifiedLatest ? extractAssistantContent(reVerifiedLatest, logger) : "";
-          const reVerifiedGenerating = isGeminiGenerating(reVerifiedLatest, logger);
-          if (reVerifiedContent === lastExtractedContent && !reVerifiedGenerating) {
-            logger.log("Response generation stabilization completed successfully.");
-            finish({
-              success: true,
-              content: reVerifiedContent
-            });
-          } else {
-            logger.log("Text or generation status changed during stabilization window, resuming observation.");
-          }
-        }, stabilizationMs);
+      if (stabilizationTimer) {
+        clearTimeout(stabilizationTimer);
       }
+      lastExtractedContent = currentContent;
+      const windowMs = isComplete ? 200 : defaultStabilizationMs;
+      stabilizationTimer = setTimeout(() => {
+        const reVerifiedLatest = getLatestAssistantMessageElement(logger);
+        const reVerifiedContent = reVerifiedLatest ? extractAssistantContent(reVerifiedLatest, logger) : "";
+        if (reVerifiedContent.trim().length > 0 && reVerifiedContent === lastExtractedContent) {
+          logger.log(`Response text verified stable (${reVerifiedContent.length} chars). Completing askGemini request!`);
+          finish({
+            success: true,
+            content: reVerifiedContent
+          });
+        } else {
+          logger.log("Response text changed during stabilization window, continuing stream observation...");
+        }
+      }, windowMs);
     };
     observer = new MutationObserver(() => {
       checkState();
@@ -586,8 +595,8 @@ function observeResponseCompletion(options) {
     });
     pollIntervalTimer = setInterval(() => {
       checkState();
-    }, 400);
-    logger.log("Started MutationObserver & 400ms polling watcher for Gemini response...");
+    }, 300);
+    logger.log("Started MutationObserver & 300ms polling watcher for Gemini response...");
     checkState();
   });
 }

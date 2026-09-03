@@ -47,18 +47,14 @@ export const GEMINI_SELECTORS = {
     'button:has(svg)' // Scoped to composer container
   ],
 
-  // 4. Stop / generating candidates (scoped to composer container or response area)
+  // 4. Stop / generating candidates (strict specific selectors)
   generatingIndicators: [
-    'button[aria-label*="Stop" i]',
-    'button[aria-label*="Dừng" i]',
-    'button[aria-label*="Cancel" i]',
-    '[data-test-id*="stop" i]',
-    '[data-testid*="stop" i]',
-    '.stop-button',
-    'mat-progress-spinner',
-    '[data-is-streaming="true"]',
-    '.streaming',
-    '.is-generating'
+    'button[aria-label*="Stop generating" i]',
+    'button[aria-label*="Dừng tạo" i]',
+    'button[aria-label*="Dừng câu trả lời" i]',
+    '[data-test-id="stop-button"]',
+    '[data-testid="stop-button"]',
+    '.stop-button'
   ],
 
   // 5. Assistant message element candidates
